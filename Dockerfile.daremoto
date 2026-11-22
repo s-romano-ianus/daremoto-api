@@ -1,0 +1,15 @@
+# DareMoto build of rustdesk-api: recompiles the API binary from this branch and drops it
+# into the official v2.7 image, which already contains the web admin and other resources.
+#   docker build -f Dockerfile.daremoto -t daremoto-api:<tag> .
+FROM golang:1.23-alpine AS build
+RUN apk add --no-cache build-base
+WORKDIR /src
+COPY go.mod go.sum ./
+RUN go mod download
+COPY . .
+RUN CGO_ENABLED=1 go build -ldflags "-s -w" -o /out/apimain ./cmd/apimain.go
+
+FROM lejianwen/rustdesk-api:v2.7
+COPY --from=build /out/apimain /app/apimain
+COPY resources/i18n /app/resources/i18n
+COPY resources/templates /app/resources/templates

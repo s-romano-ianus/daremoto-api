@@ -158,3 +158,7 @@ other = "Banned."
 description = "Register success, wait admin confirm."
 one = "Register success, wait admin confirm."
 other = "Register success, wait admin confirm."
+[UserDisabled]
+description = "User disabled."
+one = "Your account has been created but is not active yet. You will be able to sign in once it has been enabled."
+other = "Your account has been created but is not active yet. You will be able to sign in once it has been enabled."

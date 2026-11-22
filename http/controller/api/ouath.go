@@ -92,6 +92,13 @@ func (o *Oauth) OidcAuthQueryPre(c *gin.Context) (*model.User, *model.UserToken)
 		return nil, nil
 	}
 
+	// DareMoto: disabled users (e.g. SSO sign-ups waiting for approval) must not get a token
+	if !service.AllService.UserService.CheckUserEnable(u) {
+		service.AllService.OauthService.DeleteOauthCache(q.Code)
+		response.Error(c, response.TranslateMsg(c, "UserDisabled"))
+		return nil, nil
+	}
+
 	// 删除 OAuth 缓存
 	service.AllService.OauthService.DeleteOauthCache(q.Code)
 
@@ -242,6 +249,13 @@ func (o *Oauth) OauthCallback(c *gin.Context) {
 		}
 		oauthCache.UserId = user.Id
 		oauthService.SetOauthCache(cacheKey, oauthCache, 0)
+		// DareMoto: tell the user the account exists but still has to be enabled
+		if !service.AllService.UserService.CheckUserEnable(user) {
+			c.HTML(http.StatusOK, "oauth_fail.html", gin.H{
+				"message": "UserDisabled",
+			})
+			return
+		}
 		// 如果是webadmin，登录成功后跳转到webadmin
 		if oauthCache.DeviceType == model.LoginLogClientWebAdmin {
 			/*service.AllService.UserService.Login(u, &model.LoginLog{

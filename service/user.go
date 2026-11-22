@@ -362,6 +362,9 @@ func (us *UserService) RegisterByOauth(oauthUser *model.OauthUser, op string) (e
 	user := &model.User{
 		Username: usernameUnique,
 		GroupId:  1,
+		// DareMoto: users created through SSO get the same initial status as
+		// self-registered users (app.register-status), e.g. disabled until approved.
+		Status: oauthRegisterStatus(),
 	}
 	oauthUser.ToUser(user, false)
 	tx.Create(user)
@@ -528,4 +531,14 @@ func (us *UserService) IsUsernameExistsLocal(username string) bool {
 
 func (us *UserService) IsEmailExistsLdap(email string) bool {
 	return AllService.LdapService.IsEmailExists(email)
+}
+
+// oauthRegisterStatus returns the initial status of users created by SSO auto-registration
+// (DareMoto): it follows app.register-status, so with register-status=2 they stay disabled
+// until an admin enables them.
+func oauthRegisterStatus() model.StatusCode {
+	if Config != nil && model.StatusCode(Config.App.RegisterStatus) == model.COMMON_STATUS_DISABLED {
+		return model.COMMON_STATUS_DISABLED
+	}
+	return model.COMMON_STATUS_ENABLE
 }
