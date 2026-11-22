@@ -73,6 +73,18 @@ func ApiInit(g *gin.Engine) {
 		frg.POST("/audit/file", au.AuditFile)
 	}
 
+	// DareMoto: subscriptions. The webhook is authenticated by the Stripe signature; the
+	// other routes accept both the client token and the web token.
+	{
+		bi := &api.Billing{}
+		frg.POST("/billing/webhook", bi.Webhook)
+		bg := frg.Group("/billing", middleware.AnyUserAuth())
+		bg.GET("/status", bi.Status)
+		bg.POST("/checkout", bi.Checkout)
+		bg.POST("/change", bi.Change)
+		bg.POST("/portal", bi.Portal)
+	}
+
 	frg.Use(middleware.RustAuth())
 	{
 		u := &api.User{}

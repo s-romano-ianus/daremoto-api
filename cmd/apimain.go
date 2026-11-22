@@ -101,7 +101,7 @@ var resetUserPwdCmd = &cobra.Command{
 
 func init() {
 	rootCmd.PersistentFlags().StringVarP(&global.ConfigPath, "config", "c", "./conf/config.yaml", "choose config file")
-	rootCmd.AddCommand(resetPwdCmd, resetUserPwdCmd)
+	rootCmd.AddCommand(resetPwdCmd, resetUserPwdCmd, stripeSetupCmd)
 }
 func main() {
 	if err := rootCmd.Execute(); err != nil {
@@ -211,6 +211,10 @@ func InitGlobal() {
 	})
 	global.LoginLimiter.RegisterProvider(utils.B64StringCaptchaProvider{})
 	DatabaseAutoUpdate()
+	// DareMoto: billing tables, migrated on every start (idempotent)
+	if err := service.Billing.Migrate(); err != nil {
+		global.Logger.Error("billing migrate: ", err)
+	}
 }
 
 func DatabaseAutoUpdate() {

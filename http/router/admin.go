@@ -50,6 +50,12 @@ func Init(g *gin.Engine) {
 
 	RustdeskCmdBind(adg)
 	DeviceGroupBind(adg)
+
+	// DareMoto: manual plan assignment (admin only)
+	bi := &admin.Billing{}
+	bg := adg.Group("/billing", middleware.AdminPrivilege())
+	bg.GET("/subscription", bi.Get)
+	bg.POST("/subscription", bi.Set)
 	//访问静态文件
 	//g.StaticFS("/upload", http.Dir(global.Config.Gin.ResourcesPath+"/upload"))
 }

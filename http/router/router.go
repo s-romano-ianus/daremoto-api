@@ -20,4 +20,6 @@ func WebInit(g *gin.Engine) {
 		g.StaticFS("/webclient2", http.Dir(global.Config.Gin.ResourcesPath+"/web2"))
 	}
 	g.StaticFS("/_admin", http.Dir(global.Config.Gin.ResourcesPath+"/admin"))
+	// DareMoto: "Il mio account" page (plan, usage, Stripe checkout and portal)
+	g.StaticFS("/account", http.Dir(global.Config.Gin.ResourcesPath+"/account"))
 }

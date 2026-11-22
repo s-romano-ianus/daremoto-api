@@ -7,9 +7,10 @@ WORKDIR /src
 COPY go.mod go.sum ./
 RUN go mod download
 COPY . .
-RUN CGO_ENABLED=1 go build -ldflags "-s -w" -o /out/apimain ./cmd/apimain.go
+RUN CGO_ENABLED=1 go build -ldflags "-s -w" -o /out/apimain ./cmd
 
 FROM lejianwen/rustdesk-api:v2.7
 COPY --from=build /out/apimain /app/apimain
 COPY resources/i18n /app/resources/i18n
 COPY resources/templates /app/resources/templates
+COPY resources/account /app/resources/account

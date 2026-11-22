@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="it">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Il mio account — DareMoto</title>
+  <meta name="robots" content="noindex">
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="account.css">
+  <meta name="theme-color" content="#1F3BE0">
+</head>
+
+<body>
+  <header class="site-header">
+    <div class="wrap">
+      <a class="brand" href="https://daremoto.net/"><img src="logo.svg" alt="DareMoto" width="183" height="34"><span
+          class="brand-by">by <strong>Ianus Project</strong></span></a>
+      <nav class="nav" aria-label="Account">
+        <a href="https://daremoto.net/supporto/">Supporto</a>
+        <button type="button" class="link" id="logout" hidden>Esci</button>
+      </nav>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <div id="notice" class="notice" role="status" hidden></div>
+
+    <!-- Login / registration -->
+    <section id="auth" class="card narrow" hidden>
+      <h1>Il mio account</h1>
+      <p class="muted">Accedi con lo stesso account che usi nel programma DareMoto.</p>
+
+      <div id="sso" class="sso"></div>
+      <p id="sso-wait" class="muted small" hidden>Completa l'accesso nella finestra che si è aperta. Questa pagina si
+        aggiorna da sola.</p>
+      <div id="sso-sep" class="sep" hidden><span>oppure</span></div>
+
+      <form id="login-form" novalidate>
+        <label>Nome utente o email<input name="username" autocomplete="username" required></label>
+        <label>Password<input name="password" type="password" autocomplete="current-password" required></label>
+        <div id="captcha-box" class="captcha" hidden>
+          <img id="captcha-img" alt="Codice di verifica" width="160" height="60">
+          <label>Codice di verifica<input name="captcha" autocomplete="off"></label>
+        </div>
+        <button class="btn btn-cobalt" type="submit">Accedi</button>
+      </form>
+
+      <form id="register-form" novalidate hidden>
+        <label>Nome utente<input name="username" autocomplete="username" required minlength="2" maxlength="32"></label>
+        <label>Email<input name="email" type="email" autocomplete="email" required></label>
+        <label>Password<input name="password" type="password" autocomplete="new-password" required minlength="8"
+            maxlength="32"></label>
+        <label>Ripeti la password<input name="confirm_password" type="password" autocomplete="new-password" required
+            minlength="8" maxlength="32"></label>
+        <button class="btn btn-cobalt" type="submit">Crea account</button>
+      </form>
+      <p class="small switch" id="switch-auth"></p>
+    </section>
+
+    <!-- Account -->
+    <section id="account" hidden>
+      <h1>Ciao, <span id="who"></span></h1>
+
+      <div class="card current">
+        <div>
+          <p class="eyebrow">Piano attuale</p>
+          <p class="plan-name" id="plan-name"></p>
+          <p class="muted" id="plan-status"></p>
+        </div>
+        <dl class="usage">
+          <div>
+            <dt>PC collegati negli ultimi 30 giorni</dt>
+            <dd><span id="use-machines"></span> / <span id="lim-machines"></span></dd>
+          </div>
+          <div>
+            <dt>Sessioni contemporanee</dt>
+            <dd id="lim-sessions"></dd>
+          </div>
+        </dl>
+        <div class="actions" id="manage-box" hidden>
+          <button class="btn btn-outline" id="portal" type="button">Pagamenti, fatture e disdetta</button>
+        </div>
+      </div>
+
+      <div id="billing-off" class="card" hidden>
+        <p>I piani a pagamento saranno disponibili a breve. Per informazioni scrivi a <a
+            href="mailto:info@ianusproject.it">info@ianusproject.it</a>.</p>
+      </div>
+
+      <div id="plans-box" hidden>
+        <h2 id="plans-title">Scegli il piano</h2>
+        <div class="plans" id="plans"></div>
+
+        <div class="card extra">
+          <label for="extra">Sessioni contemporanee in più <span class="muted" id="extra-price"></span></label>
+          <div class="stepper">
+            <button type="button" class="btn btn-outline" id="extra-minus" aria-label="Una sessione in meno">−</button>
+            <input id="extra" type="number" min="0" max="50" value="0" inputmode="numeric">
+            <button type="button" class="btn btn-outline" id="extra-plus" aria-label="Una sessione in più">+</button>
+          </div>
+          <p class="muted small" id="extra-note"></p>
+        </div>
+        <p class="muted small">Prezzi IVA esclusa, addebito mensile. Paghi con carta, PayPal o addebito SEPA. Puoi
+          disdire quando vuoi: il piano resta attivo fino alla fine del mese già pagato. Per un server dedicato <a
+            href="mailto:info@ianusproject.it?subject=DareMoto%20server%20dedicato">chiedi un preventivo</a>.</p>
+      </div>
+    </section>
+
+    <p id="loading" class="muted">Caricamento…</p>
+  </main>
+
+  <footer class="site-footer">
+    <div class="wrap">
+      <a href="https://daremoto.net/privacy/">Privacy</a>
+      <a href="https://daremoto.net/licenza/">Licenza e condizioni</a>
+      <span>© 2026 Ianus Project</span>
+    </div>
+  </footer>
+  <script src="account.js"></script>
+</body>
+
+</html>
