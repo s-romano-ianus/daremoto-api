@@ -352,8 +352,11 @@ func (s *BillingService) Checkout(ctx context.Context, u *model.User, plan strin
 		TaxIDCollection:          &stripe.CheckoutSessionCreateTaxIDCollectionParams{Enabled: stripe.Bool(true)},
 		SubscriptionData:         &stripe.CheckoutSessionCreateSubscriptionDataParams{Metadata: map[string]string{"user_id": uid}},
 		Metadata:                 map[string]string{"user_id": uid},
-		SuccessURL:               stripe.String(s.publicURL + "/account/?checkout=success"),
-		CancelURL:                stripe.String(s.publicURL + "/account/?checkout=cancel"),
+		// Ianus Project is the seller: Managed Payments (Stripe as merchant of record)
+		// would limit Checkout to cards, without PayPal and SEPA Direct Debit.
+		ManagedPayments: &stripe.CheckoutSessionCreateManagedPaymentsParams{Enabled: stripe.Bool(false)},
+		SuccessURL:      stripe.String(s.publicURL + "/account/?checkout=success"),
+		CancelURL:       stripe.String(s.publicURL + "/account/?checkout=cancel"),
 	}
 	if s.autoTax {
 		params.AutomaticTax = &stripe.CheckoutSessionCreateAutomaticTaxParams{Enabled: stripe.Bool(true)}
