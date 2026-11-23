@@ -1,6 +1,7 @@
 package api
 
 import (
+	"html/template"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -300,7 +301,7 @@ func (o *Oauth) Message(c *gin.Context) {
 			ID: mp.Title,
 		})
 		if err == nil {
-			res = utils.StringConcat(";title='", title, "';")
+			res = utils.StringConcat(";title='", template.JSEscapeString(title), "';")
 		}
 
 	}
@@ -309,7 +310,7 @@ func (o *Oauth) Message(c *gin.Context) {
 			ID: mp.Msg,
 		})
 		if err == nil {
-			res = utils.StringConcat(res, "msg = '", msg, "';")
+			res = utils.StringConcat(res, "msg = '", template.JSEscapeString(msg), "';")
 		}
 	}
 

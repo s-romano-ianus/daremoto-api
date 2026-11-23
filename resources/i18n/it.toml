@@ -1,0 +1,46 @@
+# DareMoto: Italian strings for the pages the browser shows after SSO (oauth_success.html,
+# oauth_fail.html). Missing keys fall back to en.toml.
+[OauthSuccess]
+description = "Accesso effettuato"
+one = "Accesso effettuato"
+other = "Accesso effettuato"
+[OauthFailed]
+description = "Accesso non riuscito"
+one = "Accesso non riuscito"
+other = "Accesso non riuscito"
+[BindSuccess]
+description = "Account collegato"
+one = "Account collegato"
+other = "Account collegato"
+[OauthHasBeenSuccess]
+description = "L'accesso è già stato completato."
+one = "L'accesso è già stato completato."
+other = "L'accesso è già stato completato."
+[ParamIsEmpty]
+description = "Richiesta incompleta. Riprova ad accedere dall'app."
+one = "Richiesta incompleta. Riprova ad accedere dall'app."
+other = "Richiesta incompleta. Riprova ad accedere dall'app."
+[ParamsError]
+description = "Richiesta non valida. Riprova ad accedere dall'app."
+one = "Richiesta non valida. Riprova ad accedere dall'app."
+other = "Richiesta non valida. Riprova ad accedere dall'app."
+[OauthExpired]
+description = "La richiesta di accesso è scaduta. Riprova dall'app."
+one = "La richiesta di accesso è scaduta. Riprova dall'app."
+other = "La richiesta di accesso è scaduta. Riprova dall'app."
+[OauthHasBindOtherUser]
+description = "Questo account è già collegato a un altro utente DareMoto."
+one = "Questo account è già collegato a un altro utente DareMoto."
+other = "Questo account è già collegato a un altro utente DareMoto."
+[ItemNotFound]
+description = "Utente non trovato."
+one = "Utente non trovato."
+other = "Utente non trovato."
+[BindFail]
+description = "Collegamento dell'account non riuscito."
+one = "Collegamento dell'account non riuscito."
+other = "Collegamento dell'account non riuscito."
+[UserDisabled]
+description = "Il tuo account DareMoto è disattivato. Scrivi a info@ianusproject.it."
+one = "Il tuo account DareMoto è disattivato. Scrivi a info@ianusproject.it."
+other = "Il tuo account DareMoto è disattivato. Scrivi a info@ianusproject.it."
