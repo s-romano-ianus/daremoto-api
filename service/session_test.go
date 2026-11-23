@@ -125,3 +125,38 @@ func TestSessionCanceledPlanFallsBackToFree(t *testing.T) {
 	mustAllow(t, tok, "111")
 	mustDeny(t, tok, "222", "Gratuito")
 }
+
+func TestManualPlanExpiry(t *testing.T) {
+	setupSessionTest(t)
+	tok := addUser(t, "tester", model.COMMON_STATUS_ENABLE)
+	var u model.User
+	DB.Where("username = ?", "tester").First(&u)
+
+	// gifted dedicated plan with custom limits, still valid
+	if _, err := Billing.SetManual(u.Id, model.PlanDedicated, 0, 5000, 50, "tester", time.Now().Add(time.Hour).Unix()); err != nil {
+		t.Fatal(err)
+	}
+	if l := Billing.LimitsFor(u.Id); l.Plan != model.PlanDedicated || l.Machines != 5000 || l.Sessions != 50 {
+		t.Fatalf("unexpected limits while valid: %+v", l)
+	}
+	mustAllow(t, tok, "pc-1")
+	mustAllow(t, tok, "pc-2")
+
+	// expired: back to free (1 machine, already used by pc-1 and pc-2)
+	DB.Model(&model.Subscription{}).Where("user_id = ?", u.Id).Update("manual_until", time.Now().Add(-time.Minute).Unix())
+	if l := Billing.LimitsFor(u.Id); l.Plan != model.PlanFree {
+		t.Fatalf("expected free after expiry, got %+v", l)
+	}
+	mustDeny(t, tok, "pc-3", "Gratuito")
+
+	// revoked: free, expiry cleared
+	sub, err := Billing.SetManual(u.Id, model.PlanFree, 0, 0, 0, "", 123)
+	if err != nil || Billing.Get(sub.UserId).ManualUntil != 0 {
+		t.Fatalf("revoke: %v", err)
+	}
+
+	// search finds the user
+	if r := Billing.SearchUsers("test", false); len(r) != 1 || r[0].Username != "tester" {
+		t.Fatalf("search: %+v", r)
+	}
+}

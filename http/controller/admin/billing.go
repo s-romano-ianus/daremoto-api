@@ -5,6 +5,8 @@ package admin
 
 import (
 	"strconv"
+	"time"
+	_ "time/tzdata" // Europe/Rome also without tzdata in the image
 
 	"github.com/gin-gonic/gin"
 	"github.com/lejianwen/rustdesk-api/v2/http/response"
@@ -20,6 +22,13 @@ type billingSetForm struct {
 	MaxMachines   int    `json:"max_machines"`
 	MaxSessions   int    `json:"max_sessions"`
 	Note          string `json:"note"`
+	// last day of a gifted plan, "2026-03-31" (Italian time, end of day); empty = never
+	Until string `json:"until"`
+}
+
+// Users [GET] /api/admin/billing/users?q=mario&gifted=1
+func (b *Billing) Users(c *gin.Context) {
+	response.Success(c, service.Billing.SearchUsers(c.Query("q"), c.Query("gifted") == "1"))
 }
 
 // Get [GET] /api/admin/billing/subscription?user_id=1
@@ -48,7 +57,28 @@ func (b *Billing) Set(c *gin.Context) {
 		response.Fail(c, 101, "Utente non trovato")
 		return
 	}
-	sub, err := service.Billing.SetManual(f.UserId, f.Plan, f.ExtraSessions, f.MaxMachines, f.MaxSessions, f.Note)
+	var until int64
+	if f.Until != "" {
+		loc, err := time.LoadLocation("Europe/Rome")
+		if err != nil {
+			loc = time.Local
+		}
+		day, err := time.ParseInLocation("2006-01-02", f.Until, loc)
+		if err != nil {
+			response.Fail(c, 101, "Data di scadenza non valida")
+			return
+		}
+		until = day.AddDate(0, 0, 1).Unix() - 1
+		if until < time.Now().Unix() {
+			response.Fail(c, 101, "La data di scadenza è già passata")
+			return
+		}
+	}
+	if f.MaxMachines < 0 || f.MaxSessions < 0 || f.ExtraSessions < 0 {
+		response.Fail(c, 101, "I limiti non possono essere negativi")
+		return
+	}
+	sub, err := service.Billing.SetManual(f.UserId, f.Plan, f.ExtraSessions, f.MaxMachines, f.MaxSessions, f.Note, until)
 	if err != nil {
 		response.Fail(c, 101, err.Error())
 		return

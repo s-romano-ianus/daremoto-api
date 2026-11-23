@@ -203,7 +203,7 @@
     $('who').textContent = s.user.nickname || s.user.username;
     $('plan-name').textContent = s.plan_name;
     var st = '';
-    if (sub.status === 'manual' && s.plan !== 'free') st = 'Piano gestito da Ianus Project.';
+    if (sub.status === 'manual' && s.plan !== 'free') st = sub.manual_until ? 'Piano offerto da Ianus Project fino al ' + date(sub.manual_until) + '.' : 'Piano gestito da Ianus Project.';
     else if (sub.stripe && sub.cancel_at_period_end && sub.current_period_end) st = 'Disdetto: resta attivo fino al ' + date(sub.current_period_end) + ', poi passa al piano Gratuito.';
     else if (STATUS_TEXT[sub.status]) st = STATUS_TEXT[sub.status];
     else if (sub.stripe && sub.current_period_end) st = 'Si rinnova il ' + date(sub.current_period_end) + '.';
@@ -219,7 +219,130 @@
     $('billing-off').hidden = s.billing_enabled || manual;
     $('plans-box').hidden = !s.billing_enabled || manual;
     if (s.billing_enabled && !manual) renderPlans(s);
+    var wasAdmin = !$('admin').hidden;
+    $('admin').hidden = !s.user.is_admin;
+    if (s.user.is_admin && !wasAdmin) adminSearch();
   }
+
+  // ------------------------------------------------------------------ admin: gifted plans
+  var PLAN_LABEL = { free: 'Gratuito', team: 'Team', business: 'Business', dedicated: 'Server dedicato' };
+
+  function isoDay(unix) {
+    var d = new Date(unix * 1000);
+    var p = function (n) { return (n < 10 ? '0' : '') + n; };
+    return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate());
+  }
+
+  function longDay(iso) {
+    return new Date(iso + 'T12:00:00').toLocaleDateString('it-IT', { day: 'numeric', month: 'long', year: 'numeric' });
+  }
+
+  function adminSearch() {
+    var f = $('admin-search');
+    var q = '?q=' + encodeURIComponent(f.q.value.trim()) + (f.gifted.checked ? '&gifted=1' : '');
+    var box = $('admin-results');
+    return api('GET', '/api/admin/billing/users' + q).then(function (list) {
+      box.textContent = '';
+      if (!list || !list.length) { box.appendChild(el('p', { class: 'muted small', text: 'Nessun utente trovato.' })); return; }
+      list.forEach(function (u) { box.appendChild(adminRow(u)); });
+    }).catch(function (e) { notice(e.message, 'err'); });
+  }
+
+  function adminRow(u) {
+    var sub = u.subscription || {};
+    var name = u.nickname || u.username;
+    var manual = sub.status === 'manual' && sub.plan !== 'free';
+    var stripe = !!sub.stripe_subscription_id && ['active', 'trialing', 'past_due'].indexOf(sub.status) >= 0;
+    var tags = el('p', {});
+    if (manual) {
+      tags.appendChild(el('span', { class: 'tag ' + (u.expired ? 'expired' : 'gift'), text: (u.expired ? 'Scaduto: ' : 'Regalato: ') + PLAN_LABEL[sub.plan] }));
+      tags.appendChild(document.createTextNode(sub.manual_until ? (u.expired ? 'il ' : 'fino al ') + date(sub.manual_until) : 'senza scadenza'));
+    } else if (stripe) {
+      tags.appendChild(el('span', { class: 'tag stripe', text: 'Stripe: ' + (PLAN_LABEL[sub.plan] || sub.plan) }));
+    } else {
+      tags.appendChild(el('span', { class: 'tag', text: 'Gratuito' }));
+    }
+    tags.appendChild(document.createTextNode(' · ' + u.machines_used + '/' + u.limits.machines + ' PC, ' +
+      u.limits.sessions + (u.limits.sessions === 1 ? ' sessione' : ' sessioni')));
+
+    var row = el('div', { class: 'admin-user' }, [
+      el('div', {}, [
+        el('p', { class: 'who', text: name + (u.email ? ' — ' + u.email : '') + (u.nickname && u.nickname !== u.username ? ' (' + u.username + ')' : '') }),
+        tags,
+        sub.note ? el('p', { class: 'muted small', text: sub.note }) : null
+      ])
+    ]);
+    if (stripe) return row;
+    var edit = el('button', { type: 'button', class: 'btn btn-outline', text: manual ? 'Modifica' : 'Regala un piano' });
+    edit.addEventListener('click', function () {
+      var open = row.querySelector('.admin-edit');
+      if (open) { open.remove(); return; }
+      row.appendChild(adminForm(u, manual));
+    });
+    row.appendChild(edit);
+    return row;
+  }
+
+  function adminForm(u, manual) {
+    var sub = u.subscription || {};
+    var plan = el('select', { name: 'plan' });
+    ['dedicated', 'business', 'team'].forEach(function (k) {
+      var o = el('option', { value: k, text: PLAN_LABEL[k] });
+      if ((manual ? sub.plan : 'dedicated') === k) o.selected = true;
+      plan.appendChild(o);
+    });
+    var def = new Date(); def.setMonth(def.getMonth() + 1);
+    var until = el('input', {
+      name: 'until', type: 'date', min: isoDay(Date.now() / 1000),
+      value: manual ? (sub.manual_until ? isoDay(sub.manual_until) : '') : isoDay(def.getTime() / 1000)
+    });
+    var machines = el('input', { name: 'max_machines', type: 'number', min: '0', inputmode: 'numeric', placeholder: 'quelli del piano', value: sub.max_machines ? String(sub.max_machines) : '' });
+    var sessions = el('input', { name: 'max_sessions', type: 'number', min: '0', inputmode: 'numeric', placeholder: 'quelle del piano', value: sub.max_sessions ? String(sub.max_sessions) : '' });
+    var note = el('input', { name: 'note', maxlength: '200', placeholder: 'es. tester, prova di un mese', value: sub.note || '' });
+    var save = el('button', { type: 'submit', class: 'btn btn-cobalt', text: 'Salva' });
+    var actions = el('div', { class: 'actions full' }, [save]);
+    if (manual) {
+      var revoke = el('button', { type: 'button', class: 'btn btn-outline', text: 'Revoca (torna Gratuito)' });
+      revoke.addEventListener('click', function () {
+        if (!window.confirm('Riportare ' + (u.nickname || u.username) + ' al piano Gratuito da subito?')) return;
+        adminSave(u, { plan: 'free' }, revoke);
+      });
+      actions.appendChild(revoke);
+    }
+    var form = el('form', { class: 'admin-edit' }, [
+      el('label', {}, [document.createTextNode('Piano'), plan]),
+      el('label', {}, [document.createTextNode('Valido fino al (vuoto = senza scadenza)'), until]),
+      el('label', {}, [document.createTextNode('PC massimi'), machines]),
+      el('label', {}, [document.createTextNode('Sessioni contemporanee'), sessions]),
+      el('label', { class: 'full' }, [document.createTextNode('Nota (la vedi solo tu)'), note]),
+      actions
+    ]);
+    form.addEventListener('submit', function (ev) {
+      ev.preventDefault();
+      adminSave(u, {
+        plan: plan.value, until: until.value,
+        max_machines: parseInt(machines.value, 10) || 0, max_sessions: parseInt(sessions.value, 10) || 0,
+        note: note.value.trim()
+      }, save);
+    });
+    return form;
+  }
+
+  function adminSave(u, body, btn) {
+    var name = u.nickname || u.username;
+    body.user_id = u.id;
+    busy(btn, true);
+    api('POST', '/api/admin/billing/subscription', body).then(function (l) {
+      notice(body.plan === 'free'
+        ? name + ' è tornato al piano Gratuito.'
+        : 'Piano ' + l.plan_name + ' assegnato a ' + name + ': ' + l.machines + ' PC, ' + l.sessions + ' sessioni, ' +
+          (body.until ? 'fino al ' + longDay(body.until) : 'senza scadenza') + '.', 'ok');
+      return adminSearch();
+    }).catch(function (e) { notice(e.message, 'err'); busy(btn, false); });
+  }
+
+  $('admin-search').addEventListener('submit', function (ev) { ev.preventDefault(); adminSearch(); });
+  $('admin-search').gifted.addEventListener('change', adminSearch);
 
   function extraValue() {
     var v = parseInt($('extra').value, 10);

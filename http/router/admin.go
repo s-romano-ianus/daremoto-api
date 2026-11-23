@@ -56,6 +56,7 @@ func Init(g *gin.Engine) {
 	bg := adg.Group("/billing", middleware.AdminPrivilege())
 	bg.GET("/subscription", bi.Get)
 	bg.POST("/subscription", bi.Set)
+	bg.GET("/users", bi.Users)
 	//访问静态文件
 	//g.StaticFS("/upload", http.Dir(global.Config.Gin.ResourcesPath+"/upload"))
 }

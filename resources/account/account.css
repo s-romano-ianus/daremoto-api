@@ -98,6 +98,26 @@ input:focus { border-color: var(--cobalt); outline: none; box-shadow: 0 0 0 3px 
 .stepper .btn { padding: 8px 16px; }
 .extra .muted { margin: 0; }
 
+/* admin */
+.admin-intro { margin: 0 0 4px; }
+.admin-search { grid-template-columns: 1fr auto; align-items: center; }
+.admin-search .check { grid-column: 1 / -1; }
+.check { display: flex; align-items: center; gap: 8px; font-weight: 600; }
+.check input { width: auto; }
+.admin-results { margin-top: 18px; display: grid; gap: 10px; }
+.admin-user { border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; display: grid; grid-template-columns: 1fr auto; gap: 6px 16px; align-items: center; }
+.admin-user p { margin: 0; }
+.admin-user .who { font-weight: 700; overflow-wrap: anywhere; }
+.admin-user .btn { padding: 8px 16px; font-size: 14px; }
+.tag { display: inline-block; font-size: 12px; font-weight: 700; padding: 2px 9px; border-radius: 999px; background: var(--soft); border: 1px solid var(--line); margin-right: 6px; }
+.tag.gift { background: var(--lime); border-color: var(--lime); color: var(--night); }
+.tag.expired { background: #fdf0ef; border-color: #f5c9c5; color: var(--err); }
+.tag.stripe { background: #eef1fd; border-color: #cdd5fa; color: var(--cobalt); }
+.admin-edit { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px 16px; margin-top: 10px; padding-top: 14px; border-top: 1px solid var(--line); }
+.admin-edit .full { grid-column: 1 / -1; }
+.admin-edit .actions { margin-top: 0; }
+select { font: inherit; font-weight: 400; padding: 11px 12px; border: 1px solid #c9cee0; border-radius: 10px; width: 100%; background: var(--white); color: var(--ink); }
+
 .site-footer { background: var(--night); color: rgba(255,255,255,.7); font-size: 14px; padding: 22px 0; }
 .site-footer .wrap { display: flex; gap: 22px; flex-wrap: wrap; }
 .site-footer a { color: rgba(255,255,255,.85); }
@@ -105,4 +125,5 @@ input:focus { border-color: var(--cobalt); outline: none; box-shadow: 0 0 0 3px 
 @media (max-width: 760px) {
   .plans { grid-template-columns: 1fr; }
   .current { grid-template-columns: 1fr; }
+  .admin-edit, .admin-user { grid-template-columns: 1fr; }
 }

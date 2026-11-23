@@ -27,7 +27,7 @@ func (b *Billing) Status(c *gin.Context) {
 	sub := bs.Get(u.Id)
 	limits := bs.Effective(sub)
 	response.Success(c, gin.H{
-		"user":            gin.H{"username": u.Username, "email": u.Email, "nickname": u.Nickname},
+		"user":            gin.H{"username": u.Username, "email": u.Email, "nickname": u.Nickname, "is_admin": service.AllService.UserService.IsAdmin(u)},
 		"billing_enabled": bs.Enabled(),
 		"plan":            limits.Plan,
 		"plan_name":       limits.PlanName,
@@ -39,6 +39,7 @@ func (b *Billing) Status(c *gin.Context) {
 			"extra_sessions":       sub.ExtraSessions,
 			"current_period_end":   sub.CurrentPeriodEnd,
 			"cancel_at_period_end": sub.CancelAtPeriodEnd,
+			"manual_until":         sub.ManualUntil,
 			"stripe":               sub.StripeSubscriptionId != "" && sub.Status != "canceled" && sub.Status != "incomplete_expired",
 			"has_customer":         sub.StripeCustomerId != "",
 		},

@@ -28,6 +28,9 @@ type Subscription struct {
 	CurrentPeriodEnd     int64  `json:"current_period_end" gorm:"default:0;not null"`
 	CancelAtPeriodEnd    bool   `json:"cancel_at_period_end" gorm:"default:0;not null"`
 	Note                 string `json:"note" gorm:"default:'';not null"`
+	// Expiry of a manual plan (unix time, 0 = never). Once past, the account is on the free
+	// plan again, without anyone having to act.
+	ManualUntil int64 `json:"manual_until" gorm:"default:0;not null"`
 	TimeModel
 }
 

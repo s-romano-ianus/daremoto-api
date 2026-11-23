@@ -105,6 +105,22 @@
           disdire quando vuoi: il piano resta attivo fino alla fine del mese già pagato. Per un server dedicato <a
             href="mailto:info@ianusproject.it?subject=DareMoto%20server%20dedicato">chiedi un preventivo</a>.</p>
       </div>
+
+      <!-- Admin only: gift plans (tester, agreements outside Stripe) -->
+      <div id="admin" hidden>
+        <h2>Amministrazione</h2>
+        <div class="card">
+          <p class="muted small admin-intro">Regala un piano a un utente già registrato (anche con Google). Alla
+            scadenza torna da solo al piano Gratuito. Gli utenti con un abbonamento Stripe attivo si gestiscono da
+            Stripe.</p>
+          <form id="admin-search" class="admin-search">
+            <input name="q" type="search" placeholder="Nome utente, email o nome" aria-label="Cerca utente">
+            <button class="btn btn-cobalt" type="submit">Cerca</button>
+            <label class="check"><input name="gifted" type="checkbox"> Solo piani regalati</label>
+          </form>
+          <div id="admin-results" class="admin-results"></div>
+        </div>
+      </div>
     </section>
 
     <p id="loading" class="muted">Caricamento…</p>

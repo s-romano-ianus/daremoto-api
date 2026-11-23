@@ -152,9 +152,15 @@ type Limits struct {
 }
 
 // Effective returns the plan and limits that apply now.
+// ManualExpired: a manual plan whose expiry date has passed (it then counts as free).
+func ManualExpired(sub *model.Subscription) bool {
+	return sub != nil && sub.Status == model.SubscriptionStatusManual &&
+		sub.ManualUntil > 0 && time.Now().Unix() > sub.ManualUntil
+}
+
 func (s *BillingService) Effective(sub *model.Subscription) Limits {
 	key := model.PlanFree
-	if sub != nil && sub.Plan != model.PlanFree && IsPaidStatus(sub.Status) {
+	if sub != nil && sub.Plan != model.PlanFree && IsPaidStatus(sub.Status) && !ManualExpired(sub) {
 		if _, ok := Plans[sub.Plan]; ok {
 			key = sub.Plan
 		}
@@ -186,7 +192,8 @@ func (s *BillingService) MachinesUsed(userId uint) int64 {
 
 // SetManual assigns a plan by hand (admin): dedicated servers, agreements outside Stripe.
 // plan "free" removes a manual plan. A live Stripe subscription is left untouched.
-func (s *BillingService) SetManual(userId uint, plan string, extra, maxMachines, maxSessions int, note string) (*model.Subscription, error) {
+// until is the expiry (unix time, 0 = never).
+func (s *BillingService) SetManual(userId uint, plan string, extra, maxMachines, maxSessions int, note string, until int64) (*model.Subscription, error) {
 	if _, ok := Plans[plan]; !ok {
 		return nil, fmt.Errorf("piano sconosciuto: %s", plan)
 	}
@@ -197,12 +204,52 @@ func (s *BillingService) SetManual(userId uint, plan string, extra, maxMachines,
 	status := model.SubscriptionStatusManual
 	if plan == model.PlanFree {
 		status = ""
+		until = 0
 	}
 	err := DB.Model(sub).Updates(map[string]interface{}{
 		"plan": plan, "status": status, "extra_sessions": extra,
 		"max_machines": maxMachines, "max_sessions": maxSessions, "note": note,
+		"manual_until": until,
 	}).Error
 	return sub, err
+}
+
+// AdminUser is one row of the admin search: the user and their plan.
+type AdminUser struct {
+	Id           uint                `json:"id"`
+	Username     string              `json:"username"`
+	Email        string              `json:"email"`
+	Nickname     string              `json:"nickname"`
+	Subscription *model.Subscription `json:"subscription"`
+	Limits       Limits              `json:"limits"`
+	MachinesUsed int64               `json:"machines_used"`
+	Expired      bool                `json:"expired"`
+}
+
+// SearchUsers finds users by username, email or nickname (empty query: the latest ones;
+// gifted: only the users with a manual plan).
+func (s *BillingService) SearchUsers(q string, gifted bool) []AdminUser {
+	var users []model.User
+	tx := DB.Model(&model.User{}).Order("id desc").Limit(30)
+	if q = strings.TrimSpace(q); q != "" {
+		like := "%" + q + "%"
+		tx = tx.Where("username LIKE ? OR email LIKE ? OR nickname LIKE ?", like, like, like)
+	}
+	if gifted {
+		tx = tx.Where("id IN (?)", DB.Model(&model.Subscription{}).Select("user_id").
+			Where("status = ? AND plan <> ?", model.SubscriptionStatusManual, model.PlanFree))
+	}
+	tx.Find(&users)
+	out := make([]AdminUser, 0, len(users))
+	for _, u := range users {
+		sub := s.Get(u.Id)
+		out = append(out, AdminUser{
+			Id: u.Id, Username: u.Username, Email: u.Email, Nickname: u.Nickname,
+			Subscription: sub, Limits: s.Effective(sub), MachinesUsed: s.MachinesUsed(u.Id),
+			Expired: ManualExpired(sub),
+		})
+	}
+	return out
 }
 
 // ---------------------------------------------------------------- Stripe prices
@@ -320,7 +367,7 @@ func (s *BillingService) Checkout(ctx context.Context, u *model.User, plan strin
 	if s.hasLiveSubscription(sub) {
 		return "", errors.New("hai già un abbonamento: cambia piano da questa pagina")
 	}
-	if sub.Status == model.SubscriptionStatusManual && sub.Plan != model.PlanFree {
+	if sub.Status == model.SubscriptionStatusManual && sub.Plan != model.PlanFree && !ManualExpired(sub) {
 		return "", errors.New("il tuo piano è gestito da Ianus Project: contattaci per modificarlo")
 	}
 	prices, err := s.Prices(ctx)
