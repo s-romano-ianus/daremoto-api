@@ -24,6 +24,7 @@ var (
 	setupTeam, setupBusiness, setupExtra int64
 	setupRecreateWebhook                 bool
 	setupRecreatePortal                  bool
+	setupTaxCode                         string
 )
 
 var stripeSetupCmd = &cobra.Command{
@@ -41,6 +42,8 @@ func init() {
 	stripeSetupCmd.Flags().Int64Var(&setupTeam, "team", 900, "Team price in cents per month, VAT excluded")
 	stripeSetupCmd.Flags().Int64Var(&setupBusiness, "business", 2900, "Business price in cents per month, VAT excluded")
 	stripeSetupCmd.Flags().Int64Var(&setupExtra, "extra-session", 800, "extra session price in cents per month, VAT excluded")
+	// txcd_10103001 = Software as a Service (SaaS), business use
+	stripeSetupCmd.Flags().StringVar(&setupTaxCode, "tax-code", "txcd_10103001", "Stripe product tax code")
 	stripeSetupCmd.Flags().BoolVar(&setupRecreateWebhook, "recreate-webhook", false, "create a new webhook endpoint even if one is recorded")
 	stripeSetupCmd.Flags().BoolVar(&setupRecreatePortal, "recreate-portal", false, "create a new portal configuration even if one is recorded")
 }
@@ -88,11 +91,25 @@ func stripeSetup(ctx context.Context) error {
 	for _, w := range want {
 		if p := existing[w.lookup]; p != nil {
 			fmt.Printf("Prezzo %-32s già presente: %s (%d cent/%s)\n", w.lookup, p.ID, p.UnitAmount, p.Recurring.Interval)
+			// products created before the tax code was set: Managed Payments and Stripe Tax need it
+			if p.Product != nil {
+				prod, err := sc.V1Products.Retrieve(ctx, p.Product.ID, nil)
+				if err != nil {
+					return err
+				}
+				if prod.TaxCode == nil || prod.TaxCode.ID != setupTaxCode {
+					if _, err := sc.V1Products.Update(ctx, prod.ID, &stripe.ProductUpdateParams{TaxCode: stripe.String(setupTaxCode)}); err != nil {
+						return err
+					}
+					fmt.Printf("  prodotto %s: codice fiscale impostato a %s\n", prod.ID, setupTaxCode)
+				}
+			}
 			continue
 		}
 		prod, err := sc.V1Products.Create(ctx, &stripe.ProductCreateParams{
 			Name:        stripe.String(w.product),
 			Description: stripe.String(w.desc),
+			TaxCode:     stripe.String(setupTaxCode),
 			Metadata:    map[string]string{"daremoto": w.lookup},
 		})
 		if err != nil {
