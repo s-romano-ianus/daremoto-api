@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/lejianwen/rustdesk-api/v2/config"
 	"github.com/lejianwen/rustdesk-api/v2/model"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
@@ -158,5 +159,34 @@ func TestManualPlanExpiry(t *testing.T) {
 	// search finds the user
 	if r := Billing.SearchUsers("test", false); len(r) != 1 || r[0].Username != "tester" {
 		t.Fatalf("search: %+v", r)
+	}
+}
+
+func TestLoginWithUsernameOrEmail(t *testing.T) {
+	setupSessionTest(t)
+	Config = &config.Config{}
+	u := &model.User{Username: "mario", Email: "Mario.Rossi@example.com", Status: model.COMMON_STATUS_ENABLE}
+	DB.Create(u)
+	if err := AllService.UserService.UpdatePassword(u, "nuova-password"); err != nil {
+		t.Fatal(err)
+	}
+	us := AllService.UserService
+	if us.InfoByUsernamePassword("mario", "nuova-password").Id != u.Id {
+		t.Fatal("username login failed")
+	}
+	if us.InfoByUsernamePassword(" mario.rossi@example.com", "nuova-password").Id != u.Id {
+		t.Fatal("email login failed")
+	}
+	if us.InfoByUsernamePassword("mario.rossi@example.com", "sbagliata").Id != 0 {
+		t.Fatal("wrong password accepted")
+	}
+	// SSO account without a password, and an email shared by two accounts
+	DB.Create(&model.User{Username: "sso@example.com", Email: "sso@example.com"})
+	if us.InfoByUsernamePassword("sso@example.com", "").Id != 0 {
+		t.Fatal("empty password accepted")
+	}
+	DB.Create(&model.User{Username: "mario2", Email: "mario.rossi@example.com"})
+	if us.InfoByUsernamePassword("mario.rossi@example.com", "nuova-password").Id != 0 {
+		t.Fatal("ambiguous email accepted")
 	}
 }

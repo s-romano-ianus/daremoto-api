@@ -56,8 +56,16 @@ func (us *UserService) InfoByUsernamePassword(username, password string) *model.
 	}
 	u := &model.User{}
 	DB.Where("username = ?", username).First(u)
-	if u.Id == 0 {
-		return u
+	// DareMoto: also sign in with the email, when exactly one account has it
+	if email := strings.TrimSpace(username); u.Id == 0 && strings.Contains(email, "@") {
+		var found []model.User
+		DB.Where("LOWER(email) = LOWER(?)", email).Limit(2).Find(&found)
+		if len(found) == 1 {
+			u = &found[0]
+		}
+	}
+	if u.Id == 0 || u.Password == "" {
+		return &model.User{}
 	}
 	ok, newHash, err := utils.VerifyPassword(u.Password, password)
 	if err != nil || !ok {
