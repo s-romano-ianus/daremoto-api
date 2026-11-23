@@ -32,7 +32,7 @@ func (b *Billing) Status(c *gin.Context) {
 		"plan":            limits.Plan,
 		"plan_name":       limits.PlanName,
 		"limits":          gin.H{"machines": limits.Machines, "sessions": limits.Sessions},
-		"usage":           gin.H{"machines": bs.MachinesUsed(u.Id)},
+		"usage":           gin.H{"machines": bs.MachinesUsed(u.Id), "sessions": service.Sessions.ActiveSessions(u.Id)},
 		"subscription": gin.H{
 			"plan":                 sub.Plan,
 			"status":               sub.Status,

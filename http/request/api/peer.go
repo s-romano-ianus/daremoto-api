@@ -76,4 +76,6 @@ type PeerInfoInHeartbeat struct {
 	Id   string `json:"id"`
 	Uuid string `json:"uuid"`
 	Ver  int    `json:"ver"`
+	// DareMoto: ids of the connections open on this device (sent while there are any)
+	Conns []int64 `json:"conns"`
 }

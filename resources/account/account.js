@@ -211,6 +211,7 @@
     $('plan-status').textContent = st;
     $('use-machines').textContent = s.usage.machines;
     $('lim-machines').textContent = s.limits.machines;
+    $('use-sessions').textContent = s.usage.sessions || 0;
     $('lim-sessions').textContent = s.limits.sessions + (sub.extra_sessions && s.plan !== 'free' ? ' (incluse ' + sub.extra_sessions + ' extra)' : '');
     $('manage-box').hidden = !sub.has_customer || !s.billing_enabled;
 

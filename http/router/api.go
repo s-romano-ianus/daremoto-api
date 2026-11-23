@@ -84,6 +84,8 @@ func ApiInit(g *gin.Engine) {
 		bg.POST("/change", bi.Change)
 		bg.POST("/portal", bi.Portal)
 	}
+	// DareMoto: plan enforcement called by hbbs (shared secret, blocked by Caddy from outside)
+	frg.POST("/internal/authorize", (&api.Internal{}).Authorize)
 
 	frg.Use(middleware.RustAuth())
 	{

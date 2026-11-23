@@ -54,6 +54,11 @@ func (a *Audit) AuditConn(c *gin.Context) {
 			}
 			service.AllService.AuditService.UpdateAuditConn(up)
 		}
+		// DareMoto: bind the controller's pending session to this connection. "close" events
+		// are not used: a session ends when it disappears from the device's heartbeat.
+		if len(af.Peer) >= 1 {
+			service.Sessions.OnAuditPeer(af.Id, af.ConnId, af.Peer[0])
+		}
 	}
 	response.Success(c, "")
 }

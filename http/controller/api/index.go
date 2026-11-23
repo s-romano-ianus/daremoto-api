@@ -54,6 +54,11 @@ func (i *Index) Heartbeat(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{})
 		return
 	}
+	// DareMoto: open connections, used to count the controllers' concurrent sessions.
+	// Only trusted from the device itself (same uuid it registered with).
+	if peer.Uuid != "" && peer.Uuid == info.Uuid {
+		service.Sessions.OnHeartbeat(info.Id, info.Conns)
+	}
 	//如果在40s以内则不更新
 	if time.Now().Unix()-peer.LastOnlineTime >= 30 {
 		upp := &model.Peer{RowId: peer.RowId, LastOnlineTime: time.Now().Unix(), LastOnlineIp: c.ClientIP()}
