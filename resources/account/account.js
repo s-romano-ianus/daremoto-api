@@ -131,7 +131,10 @@
     api('POST', '/api/admin/user/register', {
       username: f.username.value.trim(), email: f.email.value.trim(),
       password: f.password.value, confirm_password: f.confirm_password.value
-    }).then(onLoggedIn).catch(function (e) { notice(e.message, 'err'); }).then(function () { busy(btn, false); });
+    }).then(function (d) {
+      onLoggedIn(d);
+      notice('Account creato! Ora accedi anche nel programma DareMoto (Impostazioni → Account) con lo stesso nome utente e password.', 'ok');
+    }).catch(function (e) { notice(e.message, 'err'); }).then(function () { busy(btn, false); });
   });
 
   function startSso(op, btn) {
@@ -443,10 +446,12 @@
   // ------------------------------------------------------------------ start
   var params = new URLSearchParams(window.location.search);
   var checkoutResult = params.get('checkout');
-  if (checkoutResult) history.replaceState(null, '', window.location.pathname);
+  // ?registrati: link "Registrati gratis" of the DareMoto program
+  var wantsRegister = params.has('registrati');
+  if (checkoutResult || wantsRegister) history.replaceState(null, '', window.location.pathname);
 
   loadLoginOptions().then(function () {
-    if (!getToken()) { showAuth('login'); return; }
+    if (!getToken()) { showAuth(wantsRegister && state.register ? 'register' : 'login'); return; }
     if (checkoutResult === 'success') { notice('Pagamento in elaborazione…'); waitForPlan(15); }
     else {
       if (checkoutResult === 'cancel') notice('Pagamento annullato: nessun addebito.');
