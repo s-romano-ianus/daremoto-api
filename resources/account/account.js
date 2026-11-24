@@ -69,6 +69,12 @@
     var reg = mode === 'register';
     $('login-form').hidden = reg;
     $('register-form').hidden = !reg;
+    $('auth').querySelector('h1').textContent = reg ? 'Crea il tuo account DareMoto' : 'Il mio account';
+    $('auth').querySelector('p.muted').textContent = reg
+      ? 'Gratis e senza carta. Poi accedi con lo stesso account nel programma DareMoto per assistere altri PC.'
+      : 'Accedi con lo stesso account che usi nel programma DareMoto.';
+    var sso = $('sso').querySelectorAll('button');
+    for (var i = 0; i < sso.length; i++) sso[i].textContent = sso[i].textContent.replace(reg ? /^Accedi con/ : /^Registrati con/, reg ? 'Registrati con' : 'Accedi con');
     var sw = $('switch-auth');
     sw.textContent = '';
     if (!state.register) return;
